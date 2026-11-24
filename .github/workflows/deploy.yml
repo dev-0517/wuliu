@@ -1,0 +1,45 @@
+name: 华诺 AI 自动部署
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: huanuo-build
+  cancel-in-progress: false
+
+# 凭证请配置在仓库 Settings → Secrets and variables → Actions
+# 需要 5 个 Secrets：ACR_REGISTRY / ACR_NAMESPACE / ACR_REPO / ACR_USERNAME / ACR_PASSWORD
+env:
+  ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+  ACR_NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
+  ACR_REPO: ${{ secrets.ACR_REPO }}
+
+jobs:
+  build:
+    name: 云端构建并推送镜像
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 登录阿里云 ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: 构建并推送镜像
+        run: |
+          set -e
+          TAG=$(git rev-parse --short HEAD)
+          IMAGE="$ACR_REGISTRY/$ACR_NAMESPACE/$ACR_REPO:$TAG"
+          LATEST="$ACR_REGISTRY/$ACR_NAMESPACE/$ACR_REPO:latest"
+          echo "构建 $IMAGE"
+          docker build -t "$IMAGE" .
+          docker tag "$IMAGE" "$LATEST"
+          docker push "$IMAGE"
+          docker push "$LATEST"
+          echo "PUSHED $IMAGE"

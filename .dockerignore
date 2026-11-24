@@ -1,0 +1,17 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.idea
+**/.git
+**/dist
+**/frontend_dist
+**/test-artifacts
+**/backups
+**/*.log
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/.env
+**/.env.*
+**/huanuo.db

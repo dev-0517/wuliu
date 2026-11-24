@@ -1,0 +1,27 @@
+# 服务器只拉镜像、不构建：构建统一在 GitHub Actions 云端完成
+services:
+  huanuo:
+    # 部署脚本通过 APP_IMAGE 环境变量注入具体 tag，未注入时回退到 latest
+    image: ${APP_IMAGE:-<ACR_REGISTRY>/<ACR_NAMESPACE>/<ACR_REPO>:latest}
+    container_name: huanuo-ai
+    restart: unless-stopped
+    ports:
+      - "80:8000"
+    env_file:
+      - ./Backend_template/.env
+    environment:
+      PORT: "8000"
+      # 同源部署；保留公网访问来源以便调试接口文档
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://120.55.102.191,http://localhost,http://127.0.0.1}
+    volumes:
+      # 持久化 SQLite 数据库：容器重建不影响数据
+      - huanuo-data:/app/data
+      - ./Backend_template/huanuo.db:/app/huanuo.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  huanuo-data:
