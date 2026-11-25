@@ -1,13 +1,19 @@
-**/node_modules/
-**/dist/
-**/.venv/
-**/__pycache__/
-**/.pytest_cache/
+# 依赖与产物
+node_modules/
+frontend_dist/
+dist/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 本地配置与数据
+.env
 **/.env
-**/*.db
-**/*.db-shm
-**/*.db-wal
-**/*.log
-**/backups/
-**/test-artifacts/
-**/案件测试/
+*.db
+*.sqlite3
+
+# 系统
+.DS_Store
+Thumbs.db
+*.log

@@ -1,4 +1,4 @@
-name: 华诺 AI 自动部署
+name: 物流系统 自动部署
 
 on:
   push:
@@ -6,11 +6,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: huanuo-build
+  group: wuliu-build
   cancel-in-progress: false
 
-# 凭证请配置在仓库 Settings → Secrets and variables → Actions
-# 需要 5 个 Secrets：ACR_REGISTRY / ACR_NAMESPACE / ACR_REPO / ACR_USERNAME / ACR_PASSWORD
 env:
   ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
   ACR_NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
