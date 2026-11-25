@@ -1,6 +1,7 @@
 services:
   mysql:
-    image: mysql:8.0
+    # 服务器无法直连 Docker Hub，基础镜像由 Actions 同步到 ACR
+    image: ${MYSQL_IMAGE:-crpi-bez2magwy58wcu7z.cn-hangzhou.personal.cr.aliyuncs.com/wuliu11/wuliu:mysql8}
     container_name: wuliu-mysql
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci

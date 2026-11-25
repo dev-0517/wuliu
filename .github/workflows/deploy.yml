@@ -29,6 +29,19 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: 同步 MySQL 基础镜像到 ACR
+        run: |
+          set -e
+          MYSQL_IMAGE="$ACR_REGISTRY/$ACR_NAMESPACE/$ACR_REPO:mysql8"
+          if docker manifest inspect "$MYSQL_IMAGE" >/dev/null 2>&1; then
+            echo "ACR 已存在 $MYSQL_IMAGE，跳过"
+          else
+            docker pull mysql:8.0
+            docker tag mysql:8.0 "$MYSQL_IMAGE"
+            docker push "$MYSQL_IMAGE"
+            echo "SYNCED $MYSQL_IMAGE"
+          fi
+
       - name: 构建并推送镜像
         run: |
           set -e
