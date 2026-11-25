@@ -47,18 +47,18 @@ async def request_completion(client, messages, tool_choice, max_tokens=2400):
         if response.status_code in (402, 429):
             raise HTTPException(503, "模型余额不足或请求过于频繁，请稍后重试")
         if response.is_error:
-            logger.warning("DeepSeek returned HTTP %s", response.status_code)
+            logger.warning("LLM returned HTTP %s", response.status_code)
         response.raise_for_status()
         body = response.json()
         return body["choices"][0]["message"], body.get("usage", {}).get("total_tokens", 0)
     except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
-        logger.warning("DeepSeek request failed: %s", type(exc).__name__)
+        logger.warning("LLM request failed: %s", type(exc).__name__)
         # 不把供应商响应、密钥或内部异常返回给浏览器。
         raise HTTPException(502, "模型暂时无法响应，请稍后重试")
 
 async def generate_answer(db, user_id, case_id, history, prompt, *, context=None, structured=False):
     if not settings.DEEPSEEK_API_KEY:
-        raise HTTPException(503, "尚未配置 DeepSeek 密钥，请在后端 .env 中填写")
+        raise HTTPException(503, "尚未配置模型密钥，请在后端 .env 中填写")
     is_case = case_id is not None
     messages = [{"role": "system", "content": SYSTEM_PROMPT if is_case else GENERAL_PROMPT}, *history,
                 {"role": "user", "content": prompt}]
