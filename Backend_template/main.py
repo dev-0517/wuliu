@@ -13,20 +13,25 @@ from seed import seed
 
 
 def init_db(retries: int = 30, delay: int = 2) -> None:
-    """容器启动时数据库可能还没就绪，重试建表。"""
+    """容器启动时数据库可能还没就绪，仅对连接失败重试；建表与种子数据只跑一次。"""
     for attempt in range(retries):
         try:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            Base.metadata.create_all(bind=engine)
-            with SessionLocal() as db:
-                seed(db)
-            return
+            break
         except Exception as exc:  # noqa: BLE001
             if attempt == retries - 1:
                 raise
             print(f"[init] 数据库未就绪，{delay}s 后重试（{attempt + 1}/{retries}）：{exc}")
             time.sleep(delay)
+
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        try:
+            seed(db)
+        except Exception as exc:  # noqa: BLE001
+            db.rollback()
+            print(f"[init] 种子数据写入失败（不影响服务启动）：{exc}")
 
 
 @asynccontextmanager
