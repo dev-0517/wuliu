@@ -42,8 +42,8 @@ async function submit() {
     <h1 class="login-title">智慧物流全球通</h1>
 
     <form class="login-form" @submit.prevent="submit">
-      <input v-model="username" class="login-input" placeholder="输入您的账户" autocomplete="username" />
-      <input v-model="password" class="login-input" type="password" placeholder="输入您的密码" autocomplete="current-password" />
+      <input id="acc" v-model="username" class="login-input" placeholder="输入您的账户" autocomplete="username" />
+      <input id="pwd" v-model="password" class="login-input" type="password" placeholder="输入您的密码" autocomplete="current-password" />
       <input v-if="mode === 'register'" v-model="confirm" class="login-input" type="password" placeholder="再次输入密码" autocomplete="new-password" />
       <p v-if="error" class="login-err">{{ error }}</p>
       <button class="login-btn" :disabled="loading">
