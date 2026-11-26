@@ -7,8 +7,11 @@ const routes = [
   { path: '/orders/new', name: 'order-new', component: () => import('./views/OrderFormView.vue'), meta: { title: '新建运单' } },
   { path: '/orders/:id', name: 'order-detail', component: () => import('./views/OrderDetailView.vue'), meta: { title: '运单详情' } },
   { path: '/vehicles', name: 'vehicles', component: () => import('./views/VehiclesView.vue'), meta: { title: '车辆管理' } },
+  { path: '/vehicles/:id', name: 'vehicle-detail', component: () => import('./views/VehicleDetailView.vue'), meta: { title: '车辆详情' } },
   { path: '/drivers', name: 'drivers', component: () => import('./views/DriversView.vue'), meta: { title: '司机管理' } },
+  { path: '/drivers/:id', name: 'driver-detail', component: () => import('./views/DriverDetailView.vue'), meta: { title: '司机详情' } },
   { path: '/branches', name: 'branches', component: () => import('./views/BranchesView.vue'), meta: { title: '网点管理' } },
+  { path: '/branches/:id', name: 'branch-detail', component: () => import('./views/BranchDetailView.vue'), meta: { title: '网点详情' } },
   { path: '/ai', name: 'ai', component: () => import('./views/AiChatView.vue'), meta: { title: 'AI 助手' } }
 ]
 

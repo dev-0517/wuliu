@@ -62,30 +62,21 @@ onMounted(load)
 
     <p v-if="error" class="err">{{ error }}</p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>运单号</th>
-          <th>寄件人</th>
-          <th>收件人</th>
-          <th>货物</th>
-          <th>重量</th>
-          <th>状态</th>
-          <th>创建时间</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="o in items" :key="o.id">
-          <td><router-link :to="`/orders/${o.id}`">{{ o.order_no }}</router-link></td>
-          <td>{{ o.sender_name }}<div class="muted" style="font-size: 12px">{{ o.sender_phone }}</div></td>
-          <td>{{ o.receiver_name }}<div class="muted" style="font-size: 12px">{{ o.receiver_phone }}</div></td>
-          <td>{{ o.goods }}</td>
-          <td>{{ o.weight_kg }} kg</td>
-          <td><span class="badge" :class="o.status">{{ labels[o.status] }}</span></td>
-          <td class="muted">{{ o.created_at?.replace('T', ' ').slice(0, 16) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="card-grid">
+      <div v-for="o in items" :key="o.id" class="card-item" @click="$router.push(`/orders/${o.id}`)">
+        <div class="card-title">
+          <span>{{ o.order_no }}</span>
+          <span class="badge" :class="o.status">{{ labels[o.status] }}</span>
+        </div>
+        <div class="card-row"><span class="k">寄件人</span><span>{{ o.sender_name }} <span class="card-sub">{{ o.sender_phone }}</span></span></div>
+        <div class="card-row"><span class="k">收件人</span><span>{{ o.receiver_name }} <span class="card-sub">{{ o.receiver_phone }}</span></span></div>
+        <div class="card-row"><span class="k">货物</span><span>{{ o.goods }} · {{ o.weight_kg }} kg</span></div>
+        <div class="card-foot">
+          <span class="card-sub">{{ o.created_at?.replace('T', ' ').slice(0, 16) }}</span>
+          <span class="card-sub">查看详情 ›</span>
+        </div>
+      </div>
+    </div>
     <div v-if="!items.length && !loading" class="empty">没有符合条件的运单</div>
 
     <div class="row" style="margin-top: 12px; justify-content: flex-end">
