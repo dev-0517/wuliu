@@ -8,7 +8,7 @@ from sqlalchemy import text
 import models  # noqa: F401  确保模型注册到 metadata
 from config import CORS_ORIGINS
 from db import Base, SessionLocal, engine
-from routers import ai, auth, orders, resources, stats
+from routers import ai, auth, map as map_router, orders, resources, stats
 from seed import ensure_extra_fleet, seed
 
 
@@ -56,6 +56,7 @@ app.include_router(resources.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(map_router.router, prefix="/api")
 
 
 @app.get("/api/health")

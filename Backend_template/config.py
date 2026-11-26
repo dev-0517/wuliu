@@ -13,3 +13,7 @@ TOKEN_EXPIRE_HOURS = int(os.getenv("TOKEN_EXPIRE_HOURS", "24"))
 # 同源部署下前端与 API 同端口，默认放开全部来源即可
 CORS_ORIGINS = [x.strip() for x in os.getenv("CORS_ORIGINS", "*").split(",") if x.strip()]
 FRONTEND_DIST = Path(os.getenv("FRONTEND_DIST", str(BASE_DIR.parent / "frontend_dist")))
+
+# 高德地图 Web端(JS API) 凭证，未配置时前端显示申请引导
+AMAP_KEY = os.getenv("AMAP_KEY", "")
+AMAP_SECURITY_JSCODE = os.getenv("AMAP_SECURITY_JSCODE", "")

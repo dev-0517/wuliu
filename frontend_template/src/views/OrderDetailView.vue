@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
+import TrackMap from '../components/TrackMap.vue'
 
 const route = useRoute()
 const order = ref(null)
@@ -103,6 +104,8 @@ onMounted(load)
           <button class="primary" :disabled="saving" @click="changeStatus">{{ saving ? '提交中…' : '提交' }}</button>
         </div>
       </div>
+
+      <TrackMap v-if="order.id" :order-id="order.id" />
 
       <div class="panel">
         <h3 style="margin: 0 0 14px; font-size: 14px">物流轨迹</h3>
