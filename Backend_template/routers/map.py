@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from config import AMAP_KEY, AMAP_SECURITY_JSCODE
 from db import get_db
-from models import Order, User
+from models import Order, User, Vehicle
 from security import current_user
 
 router = APIRouter(prefix="/map", tags=["地图"])
@@ -34,13 +34,8 @@ def _city_of(address: str):
     return None
 
 
-@router.get("/order/{oid}/location")
-def order_location(oid: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
-    """模拟实时货物定位：按城市坐标 + 运单状态/时间插值出当前位置与轨迹。"""
-    order = db.get(Order, oid)
-    if not order:
-        raise HTTPException(404, "运单不存在")
-
+def _locate(order: Order) -> dict:
+    """按城市坐标 + 运单状态/时间插值出当前位置与轨迹。"""
     city_from = _city_of(order.sender_address or "")
     city_to = _city_of(order.receiver_address or "")
     if not city_from or not city_to or city_from == city_to:
@@ -75,3 +70,43 @@ def order_location(oid: int, db: Session = Depends(get_db), _: User = Depends(cu
         "status": order.status,
         "path": path,
     }
+
+
+@router.get("/order/{oid}/location")
+def order_location(oid: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
+    """模拟实时货物定位。"""
+    order = db.get(Order, oid)
+    if not order:
+        raise HTTPException(404, "运单不存在")
+    return _locate(order)
+
+
+@router.get("/vehicle/{vid}/tracking")
+def vehicle_tracking(vid: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
+    """车辆实时追踪：返回车辆状态与当前承运运单的实时位置。"""
+    vehicle = db.get(Vehicle, vid)
+    if not vehicle:
+        raise HTTPException(404, "车辆不存在")
+
+    order = db.scalar(
+        select(Order)
+        .where(Order.vehicle_id == vid, Order.status == "transit")
+        .order_by(Order.id.desc())
+        .limit(1)
+    )
+    result = {
+        "vehicle": {"id": vehicle.id, "plate": vehicle.plate, "model": vehicle.model, "status": vehicle.status},
+        "order": None,
+        "location": None,
+    }
+    if order:
+        result["order"] = {
+            "id": order.id,
+            "order_no": order.order_no,
+            "goods": order.goods,
+            "weight_kg": float(order.weight_kg or 0),
+            "sender": order.sender_name,
+            "receiver": order.receiver_name,
+        }
+        result["location"] = _locate(order)
+    return result

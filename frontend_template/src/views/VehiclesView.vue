@@ -2,12 +2,27 @@
 import { onMounted, reactive, ref } from 'vue'
 import api from '../api'
 import { truckImage } from '../trucks'
+import TrackMap from '../components/TrackMap.vue'
 
 const items = ref([])
 const branches = ref([])
 const error = ref('')
 const editing = ref(null)
 const form = reactive({ plate: '', model: '', capacity_kg: 0, status: 'idle', branch_id: null })
+const tracking = ref(null)
+const trackLoading = ref(false)
+
+async function showTrack(v) {
+  trackLoading.value = true
+  tracking.value = null
+  try {
+    tracking.value = await api.get(`/map/vehicle/${v.id}/tracking`)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    trackLoading.value = false
+  }
+}
 
 const statusLabels = { idle: '空闲', transit: '运输中', maintenance: '维修中' }
 
@@ -88,7 +103,10 @@ onMounted(load)
       <tbody>
         <tr v-for="v in items" :key="v.id">
           <td><img :src="truckImage(v.model)" class="truck-img" :title="v.model || '车辆'" /></td>
-          <td>{{ v.plate }}</td>
+          <td>
+            <button v-if="v.status === 'transit'" class="link plate-link" @click="showTrack(v)">{{ v.plate }}</button>
+            <template v-else>{{ v.plate }}</template>
+          </td>
           <td>{{ v.model || '—' }}</td>
           <td>{{ v.capacity_kg }} kg</td>
           <td><span class="badge neutral">{{ statusLabels[v.status] || v.status }}</span></td>
@@ -101,9 +119,32 @@ onMounted(load)
       </tbody>
     </table>
     <div v-if="!items.length" class="empty">暂无车辆</div>
+
+    <div v-if="trackLoading" class="panel" style="margin-top: 14px">加载追踪中…</div>
+
+    <div v-else-if="tracking" class="panel track-panel">
+      <div class="page-head">
+        <h3>🚚 {{ tracking.vehicle.plate }} 实时追踪</h3>
+        <button class="link" @click="tracking = null">收起</button>
+      </div>
+      <div class="row" style="flex-wrap: wrap; gap: 24px; margin-bottom: 14px; font-size: 13px">
+        <span><span class="muted">车型：</span>{{ tracking.vehicle.model || '—' }}</span>
+        <span><span class="muted">状态：</span><span class="badge neutral">{{ statusLabels[tracking.vehicle.status] }}</span></span>
+        <template v-if="tracking.order">
+          <span><span class="muted">承运运单：</span><router-link :to="`/orders/${tracking.order.id}`" class="link">{{ tracking.order.order_no }}</router-link></span>
+          <span><span class="muted">货物：</span>{{ tracking.order.goods }} · {{ tracking.order.weight_kg }} kg</span>
+          <span><span class="muted">线路：</span>{{ tracking.location?.from_city }} → {{ tracking.location?.to_city }}</span>
+          <span v-if="tracking.location?.supported"><span class="muted">运输进度：</span>{{ Math.round(tracking.location.progress * 100) }}%</span>
+        </template>
+        <span v-else class="muted">当前没有运输中的运单</span>
+      </div>
+      <TrackMap v-if="tracking.order" :order-id="tracking.order.id" />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .truck-img { width: 64px; height: 46px; object-fit: cover; border-radius: 6px; display: block; }
+.plate-link { font-weight: 600; }
+.track-panel { margin-top: 14px; }
 </style>
