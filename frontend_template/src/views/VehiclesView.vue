@@ -11,6 +11,16 @@ const editing = ref(null)
 const form = reactive({ plate: '', model: '', capacity_kg: 0, status: 'idle', branch_id: null })
 const tracking = ref(null)
 const trackLoading = ref(false)
+const etas = ref({})   // vehicle_id -> {from_city, to_city, eta_time, remain_km, progress}
+
+async function loadEtas() {
+  try {
+    const list = await api.get('/map/vehicles/etas')
+    const m = {}
+    for (const e of list) m[e.vehicle_id] = e
+    etas.value = m
+  } catch { /* 静默 */ }
+}
 
 async function showTrack(v) {
   trackLoading.value = true
@@ -31,6 +41,7 @@ async function load() {
     const [v, b] = await Promise.all([api.get('/vehicles'), api.get('/branches')])
     items.value = v
     branches.value = b
+    await loadEtas()
   } catch (e) {
     error.value = e.message
   }
@@ -98,7 +109,7 @@ onMounted(load)
 
     <table>
       <thead>
-        <tr><th>图片</th><th>车牌</th><th>车型</th><th>载重</th><th>状态</th><th>归属网点</th><th style="width: 120px">操作</th></tr>
+        <tr><th>图片</th><th>车牌</th><th>车型</th><th>载重</th><th>状态</th><th>预计到达</th><th>归属网点</th><th style="width: 120px">操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="v in items" :key="v.id">
@@ -110,6 +121,13 @@ onMounted(load)
           <td>{{ v.model || '—' }}</td>
           <td>{{ v.capacity_kg }} kg</td>
           <td><span class="badge neutral">{{ statusLabels[v.status] || v.status }}</span></td>
+          <td>
+            <span v-if="etas[v.id]" class="eta-cell" :title="`${etas[v.id].from_city} → ${etas[v.id].to_city} · 剩余 ${etas[v.id].remain_km} km`">
+              <b>{{ etas[v.id].eta_time }}</b> 到{{ etas[v.id].to_city }}
+              <span class="muted" style="font-size: 11px">余 {{ etas[v.id].remain_km }}km</span>
+            </span>
+            <span v-else class="muted">—</span>
+          </td>
           <td>{{ branchName(v.branch_id) }}</td>
           <td>
             <button class="link" @click="edit(v)">编辑</button>
@@ -147,4 +165,5 @@ onMounted(load)
 .truck-img { width: 64px; height: 46px; object-fit: cover; border-radius: 6px; display: block; }
 .plate-link { font-weight: 600; }
 .track-panel { margin-top: 14px; }
+.eta-cell b { color: var(--primary); }
 </style>
