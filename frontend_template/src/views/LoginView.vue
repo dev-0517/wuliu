@@ -5,16 +5,27 @@ import api from '../api'
 import bgUrl from '../assets/login-bg.jpg'
 
 const router = useRouter()
+const mode = ref('login') // login | register
 const username = ref('')
 const password = ref('')
+const confirm = ref('')
 const loading = ref(false)
 const error = ref('')
 
 async function submit() {
   error.value = ''
+  if (!username.value.trim() || !password.value) {
+    error.value = '请输入账户和密码'
+    return
+  }
+  if (mode.value === 'register' && password.value !== confirm.value) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
   loading.value = true
   try {
-    const data = await api.post('/auth/login', { username: username.value, password: password.value })
+    const path = mode.value === 'login' ? '/auth/login' : '/auth/register'
+    const data = await api.post(path, { username: username.value.trim(), password: password.value })
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
     router.push('/')
@@ -33,10 +44,17 @@ async function submit() {
     <form class="login-form" @submit.prevent="submit">
       <input v-model="username" class="login-input" placeholder="输入您的账户" autocomplete="username" />
       <input v-model="password" class="login-input" type="password" placeholder="输入您的密码" autocomplete="current-password" />
+      <input v-if="mode === 'register'" v-model="confirm" class="login-input" type="password" placeholder="再次输入密码" autocomplete="new-password" />
       <p v-if="error" class="login-err">{{ error }}</p>
       <button class="login-btn" :disabled="loading">
-        {{ loading ? '登录中…' : '登录' }}
+        {{ loading ? '提交中…' : mode === 'login' ? '登 录' : '注 册' }}
       </button>
+      <p class="login-switch">
+        <span>{{ mode === 'login' ? '还没有账号？' : '已有账号？' }}</span>
+        <a @click.prevent="mode = mode === 'login' ? 'register' : 'login'; error = ''">
+          {{ mode === 'login' ? '立即注册' : '去登录' }}
+        </a>
+      </p>
     </form>
   </div>
 </template>
@@ -67,7 +85,7 @@ async function submit() {
   align-items: center;
   gap: 20px;
   width: min(340px, 86vw);
-  padding: 30px 0 8vh;
+  padding: 30px 0 6vh;
 }
 
 .login-input {
@@ -108,5 +126,20 @@ async function submit() {
   background: rgba(220, 38, 38, .85);
   border-radius: 14px;
   padding: 6px 16px;
+}
+
+.login-switch {
+  margin: 0;
+  font-size: 13px;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .4);
+}
+
+.login-switch a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: 4px;
 }
 </style>
