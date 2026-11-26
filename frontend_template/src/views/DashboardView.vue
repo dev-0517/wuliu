@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import api from '../api'
+import { truckImage } from '../trucks'
 
 const stats = ref(null)
 const error = ref('')
@@ -199,6 +200,7 @@ onMounted(async () => {
       <div class="panel">
         <div class="panel-head"><h3>本月车辆接单排行</h3></div>
         <div v-for="(v, i) in stats.vehicle_rank" :key="v.plate" class="rank-row">
+          <img :src="truckImage(v.model)" class="rank-img" />
           <span class="rank-idx" :style="{ background: dotColors[i % 4] }">{{ i + 1 }}</span>
           <span class="rank-name">{{ v.plate }}</span>
           <span class="rank-val">{{ v.orders }} 单</span>
@@ -262,6 +264,7 @@ onMounted(async () => {
 .rank-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
 .rank-row:last-child { border-bottom: none; }
 .rank-idx { width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rank-img { width: 42px; height: 30px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
 .rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-val { color: var(--muted); font-size: 12px; }
 

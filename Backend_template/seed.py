@@ -119,3 +119,33 @@ def seed(db: Session) -> None:
 
     generate_orders(db, [b1, b2, b3], [v1, v2, v3, v4], [d1, d2, d3, d4])
     db.commit()
+
+
+EXTRA_VEHICLES = [
+    ("苏B·K3344", "冷藏车 9.6 米", 15000, "idle", "SH01"),
+    ("浙A·J7788", "厢式货车 12.5 米", 25000, "transit", "HZ01"),
+    ("沪C·M9900", "厢式货车 4.2 米", 1500, "idle", "SH01"),
+    ("浙A·L5566", "依维柯 4.2 米", 2000, "idle", "HZ01"),
+]
+EXTRA_DRIVERS = [
+    ("陈刚", "13800005555", "B2-320100199202022222", "available", "SH01"),
+    ("刘军", "13800006666", "A2-330100199303033333", "driving", "NJ01"),
+]
+
+
+def ensure_extra_fleet(db: Session) -> None:
+    """补足演示车队与司机（幂等：按车牌/姓名去重，老库重启也能自动补上）。"""
+    codes = db.execute(select(Branch.code, Branch.id)).all()
+    by_code = {code: bid for code, bid in codes}
+
+    plates = {plate for (plate,) in db.execute(select(Vehicle.plate)).all()}
+    for plate, model, cap, status, code in EXTRA_VEHICLES:
+        if plate not in plates:
+            db.add(Vehicle(plate=plate, model=model, capacity_kg=cap, status=status, branch_id=by_code.get(code)))
+
+    names = {name for (name,) in db.execute(select(Driver.name)).all()}
+    for name, phone, lic, status, code in EXTRA_DRIVERS:
+        if name not in names:
+            db.add(Driver(name=name, phone=phone, license_no=lic, status=status, branch_id=by_code.get(code)))
+
+    db.commit()

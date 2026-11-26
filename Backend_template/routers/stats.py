@@ -69,9 +69,9 @@ def stats(db: Session = Depends(get_db), _: User = Depends(current_user)):
 
     # 车辆承运排行与状态分布
     vehicle_rows = db.execute(
-        select(Vehicle.plate, Vehicle.status, func.count(Order.id))
+        select(Vehicle.plate, Vehicle.model, Vehicle.status, func.count(Order.id))
         .outerjoin(Order, Order.vehicle_id == Vehicle.id)
-        .group_by(Vehicle.id, Vehicle.plate, Vehicle.status)
+        .group_by(Vehicle.id, Vehicle.plate, Vehicle.model, Vehicle.status)
         .order_by(func.count(Order.id).desc())
         .limit(5)
     ).all()
@@ -109,7 +109,7 @@ def stats(db: Session = Depends(get_db), _: User = Depends(current_user)):
         "drivers": db.scalar(select(func.count()).select_from(Driver)) or 0,
         "vehicle_by_status": vehicle_by_status,
         "vehicle_usage": vehicle_usage,
-        "vehicle_rank": [{"plate": plate, "status": status, "orders": n} for plate, status, n in vehicle_rows],
+        "vehicle_rank": [{"plate": plate, "model": model, "status": status, "orders": n} for plate, model, status, n in vehicle_rows],
         "driver_rank": [{"name": name, "orders": n} for name, n in driver_rows],
         "trend": trend,
         "calendar": month_map,

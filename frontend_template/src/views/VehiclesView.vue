@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import api from '../api'
+import { truckImage } from '../trucks'
 
 const items = ref([])
 const branches = ref([])
@@ -82,10 +83,11 @@ onMounted(load)
 
     <table>
       <thead>
-        <tr><th>车牌</th><th>车型</th><th>载重</th><th>状态</th><th>归属网点</th><th style="width: 120px">操作</th></tr>
+        <tr><th>图片</th><th>车牌</th><th>车型</th><th>载重</th><th>状态</th><th>归属网点</th><th style="width: 120px">操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="v in items" :key="v.id">
+          <td><img :src="truckImage(v.model)" class="truck-img" :title="v.model || '车辆'" /></td>
           <td>{{ v.plate }}</td>
           <td>{{ v.model || '—' }}</td>
           <td>{{ v.capacity_kg }} kg</td>
@@ -101,3 +103,7 @@ onMounted(load)
     <div v-if="!items.length" class="empty">暂无车辆</div>
   </div>
 </template>
+
+<style scoped>
+.truck-img { width: 64px; height: 46px; object-fit: cover; border-radius: 6px; display: block; }
+</style>

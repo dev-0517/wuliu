@@ -9,7 +9,7 @@ import models  # noqa: F401  确保模型注册到 metadata
 from config import CORS_ORIGINS
 from db import Base, SessionLocal, engine
 from routers import auth, orders, resources, stats
-from seed import seed
+from seed import ensure_extra_fleet, seed
 
 
 def init_db(retries: int = 30, delay: int = 2) -> None:
@@ -29,6 +29,7 @@ def init_db(retries: int = 30, delay: int = 2) -> None:
     with SessionLocal() as db:
         try:
             seed(db)
+            ensure_extra_fleet(db)
         except Exception as exc:  # noqa: BLE001
             db.rollback()
             print(f"[init] 种子数据写入失败（不影响服务启动）：{exc}")
