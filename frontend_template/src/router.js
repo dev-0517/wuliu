@@ -8,7 +8,8 @@ const routes = [
   { path: '/orders/:id', name: 'order-detail', component: () => import('./views/OrderDetailView.vue'), meta: { title: '运单详情' } },
   { path: '/vehicles', name: 'vehicles', component: () => import('./views/VehiclesView.vue'), meta: { title: '车辆管理' } },
   { path: '/drivers', name: 'drivers', component: () => import('./views/DriversView.vue'), meta: { title: '司机管理' } },
-  { path: '/branches', name: 'branches', component: () => import('./views/BranchesView.vue'), meta: { title: '网点管理' } }
+  { path: '/branches', name: 'branches', component: () => import('./views/BranchesView.vue'), meta: { title: '网点管理' } },
+  { path: '/ai', name: 'ai', component: () => import('./views/AiChatView.vue'), meta: { title: 'AI 助手' } }
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })

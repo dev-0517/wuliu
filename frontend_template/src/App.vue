@@ -19,7 +19,8 @@ const menus = [
   { name: 'orders', label: '运单管理', path: '/orders' },
   { name: 'vehicles', label: '车辆管理', path: '/vehicles' },
   { name: 'drivers', label: '司机管理', path: '/drivers' },
-  { name: 'branches', label: '网点管理', path: '/branches' }
+  { name: 'branches', label: '网点管理', path: '/branches' },
+  { name: 'ai', label: 'AI 助手', path: '/ai' }
 ]
 
 function logout() {
