@@ -52,7 +52,7 @@ function logout() {
       <header class="topbar">
         <h2>{{ route.meta.title || '物流管理系统' }}</h2>
         <div class="who">
-          <span>{{ user?.username }}（{{ user?.role === 'admin' ? '管理员' : '操作员' }}）</span>
+          <span class="who-name">{{ user?.username }}（{{ user?.role === 'admin' ? '管理员' : '操作员' }}）</span>
           <button class="link" @click="logout">退出</button>
         </div>
       </header>
@@ -60,5 +60,17 @@ function logout() {
         <router-view />
       </main>
     </div>
+
+    <!-- 手机端底部导航 -->
+    <nav class="tabbar">
+      <router-link
+        v-for="m in menus"
+        :key="m.name"
+        :to="m.path"
+        :class="{ active: route.name === m.name || (m.name === 'orders' && route.name === 'order-detail') }"
+      >
+        {{ m.label }}
+      </router-link>
+    </nav>
   </div>
 </template>

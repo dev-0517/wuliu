@@ -24,6 +24,14 @@ function stopVideo(e) {
   if (v) { v.pause(); v.currentTime = 0 }
 }
 
+// 手机端没有 hover，点击切换播放/暂停
+function tapVideo(e) {
+  const v = e.currentTarget.querySelector('video')
+  if (!v) return
+  if (v.paused) v.play().catch(() => {})
+  else { v.pause(); v.currentTime = 0 }
+}
+
 
 const labels = {
   pending: '待揽收',
@@ -241,10 +249,10 @@ onMounted(async () => {
     <div class="promo-wrap">
       <div class="promo-head">
         <h3>品牌宣传</h3>
-        <span class="hint">鼠标悬停播放</span>
+        <span class="hint">悬停 / 点击播放</span>
       </div>
       <div class="promo-grid">
-        <div v-for="p in promos" :key="p.title" class="promo-card" @mouseenter="playVideo" @mouseleave="stopVideo">
+        <div v-for="p in promos" :key="p.title" class="promo-card" @mouseenter="playVideo" @mouseleave="stopVideo" @click="tapVideo">
           <video :src="p.src" :poster="p.poster" muted loop playsinline preload="none"></video>
           <div class="promo-caption">
             <b>{{ p.title }}</b>
