@@ -12,6 +12,7 @@ venv/
 **/.env
 *.db
 *.sqlite3
+scripts/deploy.local.json
 
 # 系统
 .DS_Store
