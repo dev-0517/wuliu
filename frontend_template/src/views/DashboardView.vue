@@ -7,6 +7,24 @@ const stats = ref(null)
 const error = ref('')
 const now = new Date()
 
+// 品牌宣传视频（免费素材 Coverr，悬停播放）
+const promos = [
+  { title: '干线运输', desc: '全国公路网络 · 干线高效直达', src: '/promo/highway.mp4', poster: '/promo/highway.jpg' },
+  { title: '智慧仓储', desc: '标准化仓储作业 · 安全高效分拣', src: '/promo/warehouse.mp4', poster: '/promo/warehouse.jpg' },
+  { title: '数据驱动', desc: '运营数据实时洞察 · 决策有据可依', src: '/promo/data.mp4', poster: '/promo/data.jpg' },
+]
+
+function playVideo(e) {
+  const v = e.currentTarget.querySelector('video')
+  if (v) v.play().catch(() => {})
+}
+
+function stopVideo(e) {
+  const v = e.currentTarget.querySelector('video')
+  if (v) { v.pause(); v.currentTime = 0 }
+}
+
+
 const labels = {
   pending: '待揽收',
   picked: '已揽收',
@@ -218,6 +236,24 @@ onMounted(async () => {
         <div v-if="!stats.driver_rank.length" class="empty" style="padding: 12px">暂无数据</div>
       </div>
     </div>
+
+    <!-- 品牌宣传视频 -->
+    <div class="promo-wrap">
+      <div class="promo-head">
+        <h3>品牌宣传</h3>
+        <span class="hint">鼠标悬停播放</span>
+      </div>
+      <div class="promo-grid">
+        <div v-for="p in promos" :key="p.title" class="promo-card" @mouseenter="playVideo" @mouseleave="stopVideo">
+          <video :src="p.src" :poster="p.poster" muted loop playsinline preload="none"></video>
+          <div class="promo-caption">
+            <b>{{ p.title }}</b>
+            <span>{{ p.desc }}</span>
+          </div>
+          <span class="promo-play">▶</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -226,6 +262,30 @@ onMounted(async () => {
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; grid-column: span 3; }
 .today-panel { grid-column: span 5; }
 .status-panel { grid-column: span 7; }
+
+/* 品牌宣传视频 */
+.promo-wrap { margin-top: 18px; }
+.promo-head { display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--primary); padding-left: 8px; margin-bottom: 12px; }
+.promo-head h3 { margin: 0; font-size: 14px; }
+.promo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.promo-card {
+  position: relative; border-radius: 10px; overflow: hidden; cursor: pointer;
+  aspect-ratio: 16 / 9; background: #0f172a;
+}
+.promo-card video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.promo-caption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .72)); color: #fff;
+  display: flex; flex-direction: column; gap: 2px; pointer-events: none;
+}
+.promo-caption b { font-size: 14px; }
+.promo-caption span { font-size: 12px; opacity: .85; }
+.promo-play {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.promo-card:hover .promo-play { opacity: 0; transition: opacity .2s; }
 
 .panel-head { display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--primary); padding-left: 8px; margin-bottom: 12px; }
 .panel-head h3 { margin: 0; font-size: 14px; }
