@@ -124,7 +124,8 @@ def main():
     print("[3/4] 服务器拉取新镜像部署...")
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(ECS_HOST, username=ECS_USER, password=ECS_PASS, timeout=15)
+    c.connect(ECS_HOST, username=ECS_USER, password=ECS_PASS,
+              timeout=15, look_for_keys=False, allow_agent=False)
     _, o, _ = c.exec_command(DEPLOY_CMD, timeout=300)
     out = o.read().decode(errors="replace").strip()
     c.close()
