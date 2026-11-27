@@ -39,7 +39,7 @@ async function submit() {
 
 <template>
   <div class="login-page" :style="{ backgroundImage: `url(${bgUrl})` }">
-    <h1 class="login-title">智慧物流全球通</h1>
+    <h1 class="login-title">智慧物流全球通(测试)</h1>
 
     <form class="login-form" @submit.prevent="submit">
       <input id="acc" v-model="username" class="login-input" placeholder="输入您的账户" autocomplete="username" />
