@@ -4,7 +4,7 @@ import uvicorn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from config import FRONTEND_DIST
+from config import APP_DIST, FRONTEND_DIST
 from main import app
 
 
@@ -20,6 +20,12 @@ class SPAStaticFiles(StaticFiles):
                 return FileResponse(index)
             raise
 
+
+# 用户端 APP（/app 路径，需在根路径之前挂载）
+if APP_DIST.is_dir():
+    app.mount("/app", SPAStaticFiles(directory=str(APP_DIST), html=True), name="app")
+else:
+    print(f"[warn] 未找到用户端 APP 产物目录：{APP_DIST}")
 
 if FRONTEND_DIST.is_dir():
     app.mount("/", SPAStaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")

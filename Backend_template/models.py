@@ -87,3 +87,15 @@ class Track(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     order: Mapped[Order] = relationship(back_populates="tracks")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    emoji: Mapped[str] = mapped_column(String(10), default="📦")
+    desc: Mapped[str] = mapped_column(String(200), default="")
+    price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    color: Mapped[str] = mapped_column(String(20), default="#e0f2fe")  # 卡片底色
+    stock: Mapped[int] = mapped_column(Integer, default=999)

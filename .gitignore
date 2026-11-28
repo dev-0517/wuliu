@@ -1,6 +1,7 @@
 # 依赖与产物
 node_modules/
 frontend_dist/
+app_dist/
 dist/
 __pycache__/
 *.pyc
