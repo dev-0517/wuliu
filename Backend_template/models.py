@@ -14,6 +14,12 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(20), default="operator")  # admin / operator
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # —— 用户端 APP 资料与绑定（2026-11 新增，靠 migrate_columns 自动补列）——
+    display_name: Mapped[str] = mapped_column(String(50), default="")      # 昵称
+    avatar: Mapped[str] = mapped_column(Text, default="")                  # 头像 base64 dataURL
+    bound_phone: Mapped[str] = mapped_column(String(20), default="")       # 绑定手机号
+    bound_wechat: Mapped[str] = mapped_column(String(80), default="")      # 绑定微信昵称
+    bound_qq: Mapped[str] = mapped_column(String(80), default="")          # 绑定 QQ 昵称
 
 
 class Branch(Base):
@@ -99,3 +105,21 @@ class Product(Base):
     price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     color: Mapped[str] = mapped_column(String(20), default="#e0f2fe")  # 卡片底色
     stock: Mapped[int] = mapped_column(Integer, default=999)
+    image: Mapped[str] = mapped_column(String(300), default="")        # 商品真实图片 URL
+
+
+class Payment(Base):
+    """商城支付记录：用户扫码付款后生成待审核记录，管理员批准后派发货物。"""
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    method: Mapped[str] = mapped_column(String(20))             # wechat / alipay
+    amount: Mapped[float] = mapped_column(Numeric(10, 2))
+    status: Mapped[str] = mapped_column(String(20), default="paid")  # paid=已付款待审核 / approved / rejected
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    order: Mapped[Order] = relationship()
+    user: Mapped[User] = relationship()

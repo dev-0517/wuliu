@@ -1,5 +1,7 @@
 import math
 import random
+import re
+import time
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,7 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from db import get_db
-from models import Branch, Order, Product, Track, User
+from models import Branch, Order, Payment, Product, Track, User
 from routers.orders import next_order_no
 from schemas import OrderDetail, TrackOut
 from security import current_user
@@ -28,19 +30,25 @@ STATUS_LABEL = {
 }
 
 DEMO_PRODUCTS = [
-    {"name": "智能快递柜月卡", "emoji": "🗄️", "desc": "专属格口随时取件", "price": 9.9, "color": "#e0f2fe"},
-    {"name": "加厚气泡膜 10m", "emoji": "🧼", "desc": "寄快递防震必备", "price": 12.5, "color": "#fef9c3"},
-    {"name": "物流行业模型摆件", "emoji": "🚚", "desc": "经典干线卡车 1:64", "price": 68.0, "color": "#fce7f3"},
-    {"name": "保温生鲜箱 25L", "emoji": "🧊", "desc": "生鲜运输锁冷 48h", "price": 39.9, "color": "#dbeafe"},
-    {"name": "便携电子秤 50kg", "emoji": "⚖️", "desc": "寄件称重不踩坑", "price": 25.0, "color": "#dcfce7"},
-    {"name": "行李寄存袋 加厚", "emoji": "👜", "desc": "搬家寄存两相宜", "price": 15.8, "color": "#fde8e8"},
-    {"name": "全局定位追踪器", "emoji": "📍", "desc": "贵重货物实时查", "price": 89.0, "color": "#ede9fe"},
-    {"name": "纸箱打包套装 x20", "emoji": "📦", "desc": "五层加厚 各规格", "price": 29.9, "color": "#ffedd5"},
+    {"name": "智能快递柜月卡", "emoji": "🗄️", "desc": "专属格口随时取件", "price": 9.9, "color": "#e0f2fe", "image": "/static/products/p1.jpg"},
+    {"name": "加厚气泡膜 10m", "emoji": "🧼", "desc": "寄快递防震必备", "price": 12.5, "color": "#fef9c3", "image": "/static/products/p2.jpg"},
+    {"name": "物流行业模型摆件", "emoji": "🚚", "desc": "经典干线卡车 1:64", "price": 68.0, "color": "#fce7f3", "image": "/static/products/p3.jpg"},
+    {"name": "保温生鲜箱 25L", "emoji": "🧊", "desc": "生鲜运输锁冷 48h", "price": 39.9, "color": "#dbeafe", "image": "/static/products/p4.jpg"},
+    {"name": "便携电子秤 50kg", "emoji": "⚖️", "desc": "寄件称重不踩坑", "price": 25.0, "color": "#dcfce7", "image": "/static/products/p5.jpg"},
+    {"name": "行李寄存袋 加厚", "emoji": "👜", "desc": "搬家寄存两相宜", "price": 15.8, "color": "#fde8e8", "image": "/static/products/p6.jpg"},
+    {"name": "全局定位追踪器", "emoji": "📍", "desc": "贵重货物实时查", "price": 89.0, "color": "#ede9fe", "image": "/static/products/p7.jpg"},
+    {"name": "纸箱打包套装 x20", "emoji": "📦", "desc": "五层加厚 各规格", "price": 29.9, "color": "#ffedd5", "image": "/static/products/p8.jpg"},
 ]
 
 
 def ensure_products(db: Session) -> None:
     if db.scalar(select(func.count()).select_from(Product)):
+        # 老数据回填商品图片（按名称匹配）
+        by_name = {p["name"]: p["image"] for p in DEMO_PRODUCTS}
+        for row in db.scalars(select(Product)).all():
+            if not row.image and row.name in by_name:
+                row.image = by_name[row.name]
+        db.commit()
         return
     for p in DEMO_PRODUCTS:
         db.add(Product(**p))
@@ -89,7 +97,8 @@ def products(db: Session = Depends(get_db)):
     ensure_products(db)
     rows = db.scalars(select(Product).order_by(Product.id)).all()
     return [{"id": p.id, "name": p.name, "emoji": p.emoji, "desc": p.desc,
-             "price": float(p.price), "color": p.color, "stock": p.stock} for p in rows]
+             "price": float(p.price), "color": p.color, "stock": p.stock,
+             "image": p.image} for p in rows]
 
 
 @router.post("/buy/{pid}")
@@ -113,20 +122,22 @@ def buy(pid: int, user: User = Depends(current_user), db: Session = Depends(get_
         remark=f"商城下单 #{p.id}",
     )
     return {"ok": True, "order_id": order.id, "order_no": order.order_no,
-            "message": "下单成功，可在「快递」页查看物流"}
+            "amount": float(p.price),
+            "message": "下单成功，请完成支付，审核通过后即派发货物"}
 
 
 # ---------- 我的快递 ----------
 @router.get("/my-orders")
 def my_orders(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    phones = {user.username, user.bound_phone} - {""}
     rows = db.scalars(
         select(Order)
-        .where(or_(Order.sender_phone == user.username, Order.receiver_phone == user.username))
+        .where(or_(*[or_(Order.sender_phone == p, Order.receiver_phone == p) for p in phones]))
         .order_by(Order.created_at.desc()).limit(50)
     ).all()
     out = []
     for o in rows:
-        role = "收件" if o.receiver_phone == user.username else "寄件"
+        role = "收件" if o.receiver_phone in phones else "寄件"
         out.append({
             "id": o.id, "order_no": o.order_no, "goods": o.goods,
             "status": o.status, "status_label": STATUS_LABEL.get(o.status, o.status),
@@ -191,3 +202,128 @@ def nearby(lat: float = 30.28, lon: float = 120.15, db: Session = Depends(get_db
         })
     items.sort(key=lambda x: x["distance_km"])
     return items[:10]
+
+
+# ---------- 支付（扫码收款 + 后台审核） ----------
+@router.post("/pay/{oid}")
+def pay(oid: int, payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """选择微信/支付宝支付：返回对应收款码，生成支付记录，等待管理员审核。"""
+    order = _own_order(db, oid, user)
+    method = payload.get("method", "wechat")
+    if method not in ("wechat", "alipay"):
+        raise HTTPException(400, "支付方式仅支持 wechat / alipay")
+    # 金额取商品价格（商城单 remark 带 #pid）；寄件单不在线支付
+    m = re.search(r"#(\d+)", order.remark or "")
+    amount = 0.0
+    if m:
+        p = db.get(Product, int(m.group(1)))
+        if p:
+            amount = float(p.price)
+    if amount <= 0:
+        raise HTTPException(400, "该运单无需在线支付")
+    dup = db.scalar(select(Payment).where(
+        Payment.order_id == oid, Payment.status.in_(["paid", "approved"])))
+    if dup:
+        raise HTTPException(409, "该订单已有支付记录，请等待审核")
+    pay_rec = Payment(order_id=oid, user_id=user.id, method=method, amount=amount)
+    db.add(pay_rec)
+    db.commit()
+    db.refresh(pay_rec)
+    return {"ok": True, "payment_id": pay_rec.id, "amount": amount,
+            "qr": "/static/pay/wechat_qr.jpg" if method == "wechat" else "/static/pay/alipay_qr.jpg",
+            "message": "请扫码支付后点击「我已完成支付」"}
+
+
+@router.post("/pay-confirm/{payment_id}")
+def pay_confirm(payment_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """用户扫码付款后确认：记录进入「已付款待审核」状态。"""
+    rec = db.get(Payment, payment_id)
+    if not rec or rec.user_id != user.id:
+        raise HTTPException(404, "支付记录不存在")
+    if rec.status != "paid":
+        raise HTTPException(409, "该记录状态不允许重复确认")
+    return {"ok": True, "message": "支付记录已提交，管理员审核通过后将派发货物"}
+
+
+@router.get("/my-payments")
+def my_payments(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    rows = db.scalars(select(Payment).where(Payment.user_id == user.id)
+                      .order_by(Payment.created_at.desc()).limit(30)).all()
+    out = []
+    for r in rows:
+        o = db.get(Order, r.order_id)
+        out.append({
+            "id": r.id, "order_no": o.order_no if o else "", "goods": o.goods if o else "",
+            "method": r.method, "amount": float(r.amount), "status": r.status,
+            "created_at": r.created_at.strftime("%m-%d %H:%M"),
+        })
+    return out
+
+
+# ---------- 个人资料：头像 / 昵称 / 绑定 ----------
+def _mask_phone(p: str) -> str:
+    return f"{p[:3]}****{p[7:]}" if len(p) == 11 else p
+
+
+@router.get("/profile")
+def profile(user: User = Depends(current_user)):
+    return {
+        "username": user.username, "role": user.role,
+        "display_name": user.display_name or user.username,
+        "avatar": user.avatar or "",
+        "bound_phone": _mask_phone(user.bound_phone) if user.bound_phone else "",
+        "bound_wechat": user.bound_wechat or "",
+        "bound_qq": user.bound_qq or "",
+        "created_at": user.created_at.strftime("%Y-%m-%d"),
+    }
+
+
+@router.post("/profile")
+def update_profile(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    name = str(payload.get("display_name", "")).strip()
+    avatar = str(payload.get("avatar", "")).strip()
+    if name:
+        user.display_name = name[:20]
+    if avatar:
+        if len(avatar) > 400_000:
+            raise HTTPException(413, "头像图片过大，请换小图")
+        if not avatar.startswith("data:image/"):
+            raise HTTPException(400, "头像格式不正确")
+        user.avatar = avatar
+    db.commit()
+    return {"ok": True, "message": "资料已更新"}
+
+
+@router.post("/bind/phone")
+def bind_phone(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """绑定手机号：需先获取短信验证码（真实短信/演示回显由系统配置决定）。"""
+    from routers.auth import _sms_codes
+    phone = str(payload.get("phone", "")).strip()
+    code = str(payload.get("code", "")).strip()
+    if not re.fullmatch(r"1\d{10}", phone):
+        raise HTTPException(400, "请输入正确的 11 位手机号")
+    item = _sms_codes.get(phone)
+    if not item or item[0] != code or item[1] < time.time():
+        raise HTTPException(401, "验证码错误或已过期")
+    _sms_codes.pop(phone, None)
+    clash = db.scalar(select(User).where(User.username == phone))
+    if clash and clash.id != user.id:
+        raise HTTPException(409, "该手机号已被其他账号绑定")
+    user.bound_phone = phone
+    db.commit()
+    return {"ok": True, "message": f"手机号 {_mask_phone(phone)} 绑定成功"}
+
+
+@router.post("/bind/social")
+def bind_social(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """绑定微信/QQ。演示模式由前端确认；接开放平台后此处换成 OAuth 回调落库。"""
+    kind = payload.get("kind", "")
+    nick = str(payload.get("nickname", "")).strip()[:30]
+    if kind not in ("wechat", "qq") or not nick:
+        raise HTTPException(400, "参数不完整")
+    if kind == "wechat":
+        user.bound_wechat = nick
+    else:
+        user.bound_qq = nick
+    db.commit()
+    return {"ok": True, "message": f"{'微信' if kind == 'wechat' else 'QQ'}「{nick}」绑定成功"}

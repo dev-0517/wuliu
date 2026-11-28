@@ -26,6 +26,8 @@ def init_db(retries: int = 30, delay: int = 2) -> None:
             time.sleep(delay)
 
     Base.metadata.create_all(bind=engine)
+    from migrate import migrate_columns
+    migrate_columns()
     with SessionLocal() as db:
         try:
             seed(db)
@@ -58,6 +60,8 @@ app.include_router(stats.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(map_router.router, prefix="/api")
 app.include_router(mobile.router, prefix="/api")
+from routers import payments
+app.include_router(payments.router, prefix="/api")
 
 
 @app.get("/api/health")

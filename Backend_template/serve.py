@@ -7,6 +7,10 @@ from fastapi.staticfiles import StaticFiles
 from config import APP_DIST, FRONTEND_DIST
 from main import app
 
+# 后端静态资源（收款码图片等），必须在 SPA 挂载之前
+app.mount("/static", StaticFiles(directory=str(
+    __import__("pathlib").Path(__file__).parent / "static")), name="static")
+
 
 class SPAStaticFiles(StaticFiles):
     """前端为单页应用，未命中的路径回退到 index.html。"""

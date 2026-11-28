@@ -13,6 +13,8 @@ const videos = [
   { title: '数据驱动', src: '/promo/data.mp4', poster: '/promo/data.jpg' },
 ]
 const videoIdx = ref(0)
+const player = ref(null)
+const autoPlay = ref(true)
 
 const STATUS_ICON = { pending: '📥', picked: '📮', transit: '🚚', delivered: '✅', exception: '⚠️' }
 
@@ -22,12 +24,24 @@ async function load() {
   } catch (e) { /* 401 已由拦截器处理 */ }
   loading.value = false
 }
-onMounted(load)
+onMounted(() => {
+  load()
+  // 宣传视频自动轮播（浏览器允许静音自动播放；被拦截则等用户点击）
+  player.value?.play().catch(() => {})
+})
 
 function play(e) {
   const v = e.target
-  if (v.paused) v.play().catch(() => {})
-  else v.pause()
+  if (v.paused) { v.play().catch(() => {}); autoPlay.value = true }
+  else { v.pause(); autoPlay.value = false }
+}
+
+// 播完自动切下一条，循环轮播
+function onEnded() {
+  videoIdx.value = (videoIdx.value + 1) % videos.length
+  requestAnimationFrame(() => {
+    player.value?.play().catch(() => {})
+  })
 }
 </script>
 
@@ -48,16 +62,17 @@ function play(e) {
       </div>
     </div>
 
-    <!-- 品牌宣传视频（点击播放） -->
+    <!-- 品牌宣传视频（自动轮流播放，点击暂停） -->
     <div class="card">
       <div class="sec-head">
-        <b>品牌宣传</b><span class="muted">点击播放 / 暂停</span>
+        <b>品牌宣传</b>
+        <span class="muted">{{ videos[videoIdx].title }} · 自动轮播 {{ videoIdx + 1 }}/{{ videos.length }}</span>
       </div>
+      <video ref="player" class="promo" :src="videos[videoIdx].src" :poster="videos[videoIdx].poster"
+             muted playsinline preload="metadata" @click="play" @ended="onEnded"></video>
       <div class="v-tabs">
-        <span v-for="(v, i) in videos" :key="v.title" :class="{ on: videoIdx === i }" @click="videoIdx = i">{{ v.title }}</span>
+        <span v-for="(v, i) in videos" :key="v.title" :class="{ on: videoIdx === i }" @click="videoIdx = i; requestAnimationFrame(() => player?.play().catch(() => {}))">{{ v.title }}</span>
       </div>
-      <video class="promo" :src="videos[videoIdx].src" :poster="videos[videoIdx].poster"
-             muted loop playsinline preload="metadata" @click="play"></video>
     </div>
 
     <!-- 我的快递 -->

@@ -12,7 +12,8 @@ const routes = [
   { path: '/drivers/:id', name: 'driver-detail', component: () => import('./views/DriverDetailView.vue'), meta: { title: '司机详情' } },
   { path: '/branches', name: 'branches', component: () => import('./views/BranchesView.vue'), meta: { title: '网点管理' } },
   { path: '/branches/:id', name: 'branch-detail', component: () => import('./views/BranchDetailView.vue'), meta: { title: '网点详情' } },
-  { path: '/ai', name: 'ai', component: () => import('./views/AiChatView.vue'), meta: { title: 'AI 助手' } }
+  { path: '/ai', name: 'ai', component: () => import('./views/AiChatView.vue'), meta: { title: 'AI 助手' } },
+  { path: '/payments', name: 'payments', component: () => import('./views/PaymentsView.vue'), meta: { title: '支付审核' } }
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })

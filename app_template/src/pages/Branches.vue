@@ -16,19 +16,44 @@ const city = ref('杭州')
 
 async function locate() {
   loading.value = true
-  // 优先浏览器定位（需 https 权限，失败则用所选城市中心）
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        pos.value = [p.coords.longitude, p.coords.latitude]
+  // 高德 JS API 真实定位：优先 GPS/网络高精度，HTTP 环境自动降级 IP 定位
+  try {
+    const cfg = await api.get('/map/config')
+    if (!cfg.key) throw new Error('no key')
+    window._AMapSecurityConfig = { securityJsCode: cfg.security_jscode }
+    if (!window.AMap) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script')
+        s.src = `https://webapi.amap.com/maps?v=2.0&key=${cfg.key}&plugin=AMap.Geolocation`
+        s.onload = resolve
+        s.onerror = () => reject(new Error('高德脚本加载失败'))
+        document.head.appendChild(s)
+      })
+    }
+    const geo = new window.AMap.Geolocation({ enableHighAccuracy: true, timeout: 8000, noIpLocate: 0 })
+    geo.getCurrentPosition((status, result) => {
+      if (status === 'complete') {
+        pos.value = [result.position.lng, result.position.lat]
         located.value = true
-        load()
-      },
-      () => { toastMsg('定位失败，已使用 ' + city.value + ' 市中心'); load() },
-      { timeout: 5000 }
-    )
-  } else {
-    load()
+        toastMsg(`已定位到当前位置（精度 ${Math.round(result.accuracy || 0)}m）`)
+      } else {
+        toastMsg('高德定位失败，已使用 ' + city.value + ' 市中心')
+      }
+      load()
+    })
+  } catch {
+    // 高德不可用时退回浏览器定位 → 城市中心
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          pos.value = [p.coords.longitude, p.coords.latitude]
+          located.value = true
+          load()
+        },
+        () => { toastMsg('定位失败，已使用 ' + city.value + ' 市中心'); load() },
+        { timeout: 5000 }
+      )
+    } else { load() }
   }
 }
 

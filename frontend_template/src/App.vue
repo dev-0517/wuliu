@@ -17,6 +17,7 @@ const user = computed(() => {
 const menus = [
   { name: 'dashboard', label: '运营总览', path: '/' },
   { name: 'orders', label: '运单管理', path: '/orders' },
+  { name: 'payments', label: '支付审核', path: '/payments' },
   { name: 'vehicles', label: '车辆管理', path: '/vehicles' },
   { name: 'drivers', label: '司机管理', path: '/drivers' },
   { name: 'branches', label: '网点管理', path: '/branches' },
