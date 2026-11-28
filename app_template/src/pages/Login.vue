@@ -17,7 +17,9 @@ async function sendSms() {
   sending.value = true
   try {
     const data = await api.post('/auth/sms/send', { phone: phone.value })
-    hint.value = `验证码：${data.demo_code}（演示环境直接回显）`
+    hint.value = data.demo_code
+      ? `验证码：${data.demo_code}（演示环境直接回显）`
+      : (data.message || '验证码已发送到你的手机，请查收短信')
     countdown.value = 60
     timer = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(timer) }, 1000)
   } catch (e) { hint.value = e.message } finally { sending.value = false }

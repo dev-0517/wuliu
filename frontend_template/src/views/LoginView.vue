@@ -65,7 +65,9 @@ async function sendSms() {
   smsSending.value = true
   try {
     const data = await api.post('/auth/sms/send', { phone: phone.value })
-    smsHint.value = `演示环境未接真实短信，验证码：${data.demo_code}`
+    smsHint.value = data.demo_code
+      ? `演示环境未接真实短信，验证码：${data.demo_code}`
+      : (data.message || '验证码已发送到你的手机')
     startCountdown()
   } catch (e) {
     smsHint.value = e.message

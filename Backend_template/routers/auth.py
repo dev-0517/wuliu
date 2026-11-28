@@ -11,6 +11,7 @@ from db import get_db
 from models import User
 from schemas import LoginIn, PhoneLoginIn, PhoneSendIn, QrCreateOut, QrPollOut, RegisterIn, TokenOut, UserOut
 from security import create_token, current_user, hash_password, verify_password
+from sms import send_sms, sms_configured
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
@@ -56,12 +57,21 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
 
 @router.post("/sms/send")
 def sms_send(payload: PhoneSendIn, db: Session = Depends(get_db)):
-    """发送短信验证码。演示模式：验证码直接回显给前端提示。"""
+    """发送短信验证码。已配置短信服务则真实下发，否则演示模式回显。"""
     _cleanup()
     code = f"{random.randint(0, 999999):06d}"
     _sms_codes[payload.phone] = (code, time.time() + SMS_TTL)
+    if sms_configured():
+        try:
+            send_sms(payload.phone, code)
+            return {"ok": True, "expire_in": SMS_TTL,
+                    "message": "验证码已发送到你的手机，请查收短信"}
+        except Exception as exc:
+            # 发送失败则作废该验证码，避免演示回显泄露
+            _sms_codes.pop(payload.phone, None)
+            raise HTTPException(502, f"短信发送失败：{exc}")
     return {"ok": True, "expire_in": SMS_TTL, "demo_code": code,
-            "message": "演示环境未接真实短信，验证码已直接回显"}
+            "message": "演示环境未配置短信服务，验证码已直接回显"}
 
 
 @router.post("/phone-login", response_model=TokenOut)
