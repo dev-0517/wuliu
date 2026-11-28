@@ -28,6 +28,26 @@ class TokenOut(BaseModel):
     user: UserOut
 
 
+class PhoneSendIn(BaseModel):
+    phone: str = Field(pattern=r"^1\d{10}$", description="11 位手机号")
+
+
+class PhoneLoginIn(BaseModel):
+    phone: str = Field(pattern=r"^1\d{10}$")
+    code: str = Field(min_length=6, max_length=6)
+
+
+class QrCreateOut(BaseModel):
+    uuid: str
+    expire_in: int
+
+
+class QrPollOut(BaseModel):
+    status: str  # waiting / confirmed / expired
+    token: str | None = None
+    user: dict | None = None
+
+
 class BranchIn(BaseModel):
     code: str = Field(min_length=1, max_length=30)
     name: str
